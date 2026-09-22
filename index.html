@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:#f1f5f9;
+ color:#0f172a;
+ font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+
+.app{
+ max-width:560px;
+ margin:auto;
+ min-height:100vh;
+ padding-bottom:30px
+}
+
+header{
+ background:#111827;
+ color:white;
+ padding:22px 18px;
+ border-radius:0 0 24px 24px
+}
+
+header h1{
+ margin:0;
+ font-size:23px
+}
+
+header p{
+ margin:5px 0 0;
+ color:#cbd5e1;
+ font-size:12px
+}
+
+.card{
+ background:white;
+ margin:14px;
+ padding:16px;
+ border-radius:18px;
+ box-shadow:0 2px 12px #0001
+}
+
+.net{
+ text-align:center
+}
+
+.net-number{
+ font-size:42px;
+ font-weight:850;
+ color:#059669;
+ margin:5px 0
+}
+
+.small{
+ font-size:12px;
+ color:#64748b
+}
+
+.row{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px
+}
+
+.grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.field{
+ margin-top:9px
+}
+
+.field label{
+ display:block;
+ font-size:12px;
+ color:#475569;
+ margin-bottom:4px
+}
+
+.field input{
+ width:100%;
+ padding:11px;
+ border:1px solid #dbe2ea;
+ border-radius:11px;
+ font-size:16px
+}
+
+.btn{
+ border:0;
+ border-radius:13px;
+ padding:13px;
+ width:100%;
+ font-size:15px;
+ font-weight:750;
+ margin-top:12px
+}
+
+.green{
+ background:#10b981;
+ color:white
+}
+
+.red{
+ background:#ef4444;
+ color:white
+}
+
+.gray{
+ background:#e2e8f0;
+ color:#0f172a
+}
+
+.timer{
+ font-size:30px;
+ font-weight:800;
+ margin:12px 0
+}
+
+.pill{
+ font-size:11px;
+ background:#dcfce7;
+ color:#166534;
+ padding:4px 8px;
+ border-radius:99px
+}
+
+.item{
+ padding:13px 0;
+ border-bottom:1px solid #edf2f7
+}
+
+.empty{
+ text-align:center;
+ color:#94a3b8;
+ padding:20px
+}
+
+.stat{
+ background:#f8fafc;
+ border-radius:14px;
+ padding:12px
+}
+
+.stat b{
+ display:block;
+ font-size:18px;
+ margin-top:4px
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+<h1>🚗 Grab Driver Net</h1>
+<p>司机净收入记录 · RM · 数据保存在手机</p>
+</header>
+
+<div class="card net">
+
+<div class="small">今日净收入</div>
+
+<div class="net-number">
+RM <span id="net">0.00</span>
+</div>
+
+<div id="hourly" class="small">
+RM 0.00 / 小时
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="row">
+<b>🕐 工作计时</b>
+<span id="status" class="pill">未开始</span>
+</div>
+
+<div id="timer" class="timer">
+00:00:00
+</div>
+
+<button
+id="workBtn"
+class="btn green"
+onclick="toggleWork()">
+🟢 开始工作
+</button>
+
+</div>
+
+<div class="card">
+
+<b>💰 今日收入 / 开销</b>
+
+<div class="grid">
+
+<div class="field">
+<label>Grab 收入</label>
+<input id="income" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>Bonus / Incentive</label>
+<input id="bonus" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>⛽ Petrol</label>
+<input id="petrol" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🛣️ Toll</label>
+<input id="toll" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🅿️ Parking</label>
+<input id="parking" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🔧 维修</label>
+<input id="repair" type="number" step="0.01">
+</div>
+
+</div>
+
+<div class="field">
+<label>💸 其他开销</label>
+<input id="other" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🚗 今日工作公里数</label>
+<input id="km" type="number" step="0.1">
+</div>
+
+<button
+class="btn green"
+onclick="saveToday()">
+💾 保存今天记录
+</button>
+
+</div>
+
+<div class="card">
+
+<b>📊 今日统计</b>
+
+<div class="grid" style="margin-top:10px">
+
+<div class="stat">
+<span class="small">Gross 收入</span>
+<b id="gross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span class="small">总开销</span>
+<b id="expenses">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span class="small">工作时间</span>
+<b id="hours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span class="small">公里数</span>
+<b id="kmHome">0 km</b>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="row">
+<b>📅 历史记录</b>
+</div>
+
+<div id="history"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const STORAGE_KEY="grab_driver_records_v1";
+const WORK_KEY="grab_driver_work_v1";
+
+let records=
+JSON.parse(
+localStorage.getItem(STORAGE_KEY)||"[]"
+);
+
+let work=
+JSON.parse(
+localStorage.getItem(WORK_KEY)||"null"
+);
+
+function today(){
+
+return new Date()
+.toISOString()
+.slice(0,10);
+
+}
+
+function money(n){
+
+return Number(n||0)
+.toFixed(2);
+
+}
+
+function getToday(){
+
+let r=
+records.find(
+x=>x.date===today()
+);
+
+if(!r){
+
+r={
+date:today(),
+income:0,
+bonus:0,
+petrol:0,
+toll:0,
+parking:0,
+repair:0,
+other:0,
+km:0,
+workMs:0
+};
+
+}
+
+return r;
+
+}
+
+function netIncome(r){
+
+return Number(r.income||0)
++Number(r.bonus||0)
+-Number(r.petrol||0)
+-Number(r.toll||0)
+-Number(r.parking||0)
+-Number(r.repair||0)
+-Number(r.other||0);
+
+}
+
+function workHours(r){
+
+return Number(r.workMs||0)/3600000;
+
+}
+
+function saveData(){
+
+localStorage.setItem(
+STORAGE_KEY,
+JSON.stringify(records)
+);
+
+}
+
+function saveToday(){
+
+let r=getToday();
+
+r.income=
+Number(document.getElementById("income").value||0);
+
+r.bonus=
+Number(document.getElementById("bonus").value||0);
+
+r.petrol=
+Number(document.getElementById("petrol").value||0);
+
+r.toll=
+Number(document.getElementById("toll").value||0);
+
+r.parking=
+Number(document.getElementById("parking").value||0);
+
+r.repair=
+Number(document.getElementById("repair").value||0);
+
+r.other=
+Number(document.getElementById("other").value||0);
+
+r.km=
+Number(document.getElementById("km").value||0);
+
+records=
+records.filter(
+x=>x.date!==today()
+);
+
+records.push(r);
+
+saveData();
+
+render();
+
+alert("今天记录已保存！");
+
+}
+
+function toggleWork(){
+
+if(!work){
+
+work={
+start:Date.now(),
+date:today()
+};
+
+localStorage.setItem(
+WORK_KEY,
+JSON.stringify(work)
+);
+
+}else{
+
+let r=getToday();
+
+r.workMs=
+Number(r.workMs||0)
++
+Date.now()
+-
+Number(work.start);
+
+records=
+records.filter(
+x=>x.date!==today()
+);
+
+records.push(r);
+
+saveData();
+
+work=null;
+
+localStorage.removeItem(WORK_KEY);
+
+}
+
+render();
+
+}
+
+function formatTime(ms){
+
+let s=Math.floor(ms/1000);
+
+let h=Math.floor(s/3600);
+
+s%=3600;
+
+let m=Math.floor(s/60);
+
+let sec=s%60;
+
+return[
+h,m,sec
+]
+.map(
+x=>String(x).padStart(2,"0")
+)
+.join(":");
+
+}
+
+function render(){
+
+let r=getToday();
+
+let ms=
+Number(r.workMs||0);
+
+if(work){
+
+ms+=
+Date.now()
+-
+Number(work.start);
+
+}
+
+let h=ms/3600000;
+
+let net=netIncome(r);
+
+let gross=
+Number(r.income||0)
++
+Number(r.bonus||0);
+
+let expenses=gross-net;
+
+document.getElementById("net")
+.textContent=money(net);
+
+document.getElementById("hourly")
+.textContent=
+"RM "+
+money(
+h>0?net/h:0
+)+
+" / 小时";
+
+document.getElementById("timer")
+.textContent=
+formatTime(ms);
+
+document.getElementById("status")
+.textContent=
+work?"工作中":"未开始";
+
+document.getElementById("workBtn")
+.textContent=
+work
+?"🔴 结束工作"
+:"🟢 开始工作";
+
+document.getElementById("gross")
+.textContent=
+"RM "+money(gross);
+
+document.getElementById("expenses")
+.textContent=
+"RM "+money(expenses);
+
+document.getElementById("hours")
+.textContent=
+h.toFixed(1)+" h";
+
+document.getElementById("kmHome")
+.textContent=
+(r.km||0)+" km";
+
+document.getElementById("income").value=
+r.income||"";
+
+document.getElementById("bonus").value=
+r.bonus||"";
+
+document.getElementById("petrol").value=
+r.petrol||"";
+
+document.getElementById("toll").value=
+r.toll||"";
+
+document.getElementById("parking").value=
+r.parking||"";
+
+document.getElementById("repair").value=
+r.repair||"";
+
+document.getElementById("other").value=
+r.other||"";
+
+document.getElementById("km").value=
+r.km||"";
+
+renderHistory();
+
+}
+
+function renderHistory(){
+
+let box=
+document.getElementById("history");
+
+if(!records.length){
+
+box.innerHTML=
+'<div class="empty">暂无记录</div>';
+
+return;
+
+}
+
+let sorted=
+[...records].sort(
+(a,b)=>
+b.date.localeCompare(a.date)
+);
+
+box.innerHTML=
+sorted.map(
+r=>`
+
+<div class="item">
+
+<div class="row">
+
+<b>${r.date}</b>
+
+<b style="color:#059669">
+RM ${money(netIncome(r))}
+</b>
+
+</div>
+
+<div class="small">
+
+工作 ${workHours(r).toFixed(1)} 小时
+·
+${r.km||0} km
+
+</div>
+
+</div>
+
+`
+).join("");
+
+}
+
+setInterval(
+()=>{
+if(work)render();
+},
+1000
+);
+
+render();
+
+</script>
+
+</body>
+</html>

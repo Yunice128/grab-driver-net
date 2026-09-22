@@ -1,0 +1,11 @@
+{
+  "name": "Grab Driver Net",
+  "short_name": "Driver Net",
+  "description": "Grab司机净收入与工作时间记录",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#111827",
+  "orientation": "portrait",
+  "lang": "zh-CN"
+}

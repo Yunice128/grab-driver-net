@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 2.2</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f1f5f9;
+  color:#0f172a;
+  font-family:system-ui,-apple-system,sans-serif
+}
+.app{max-width:620px;margin:auto;padding-bottom:35px}
+header{
+  background:#111827;color:white;
+  padding:22px 18px;
+  border-radius:0 0 24px 24px
+}
+header h1{margin:0;font-size:23px}
+header p{margin:5px 0 0;color:#cbd5e1;font-size:12px}
+.card{
+  background:white;
+  margin:14px;
+  padding:16px;
+  border-radius:18px;
+  box-shadow:0 2px 12px #0001
+}
+h3{margin:0 0 12px}
+.small{font-size:12px;color:#64748b}
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+.stat{
+  background:#f8fafc;
+  border-radius:14px;
+  padding:13px
+}
+.stat span{font-size:12px;color:#64748b}
+.stat b{
+  display:block;
+  font-size:19px;
+  margin-top:5px
+}
+.net{color:#059669}
+.btn{
+  border:0;
+  border-radius:12px;
+  padding:13px;
+  width:100%;
+  font-size:14px;
+  font-weight:750;
+  margin-top:10px
+}
+.blue{background:#2563eb;color:white}
+.green{background:#10b981;color:white}
+.gray{background:#e2e8f0;color:#0f172a}
+.red{background:#dc2626;color:white}
+.info{
+  background:#eff6ff;
+  border-radius:12px;
+  padding:12px;
+  font-size:13px;
+  line-height:1.6
+}
+.warning{
+  background:#fff7ed;
+  border-radius:12px;
+  padding:12px;
+  font-size:13px;
+  line-height:1.6
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+<h1>🚗 Grab Driver Net 2.2</h1>
+<p>数据备份与恢复</p>
+</header>
+
+<div class="card">
+
+<h3>📊 当前资料</h3>
+
+<div class="stats">
+
+<div class="stat">
+<span>记录天数</span>
+<b id="recordCount">0</b>
+</div>
+
+<div class="stat">
+<span>总收入</span>
+<b id="totalIncome">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>总开销</span>
+<b id="totalExpense">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>净收入</span>
+<b class="net" id="totalNet">RM 0.00</b>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>💾 备份资料</h3>
+
+<div class="info">
+建议定期备份。备份文件可以保存到手机、Google Drive 或其他地方。
+以后换手机时可以使用「恢复资料」。
+</div>
+
+<button class="btn blue" onclick="backupJSON()">
+💾 下载完整备份
+</button>
+
+<button class="btn green" onclick="exportCSV()">
+📊 导出 CSV / Excel
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>📥 恢复资料</h3>
+
+<div class="warning">
+恢复备份会把备份中的记录加入目前资料。
+如果备份中已经存在相同记录，系统会避免重复加入。
+</div>
+
+<input
+id="fileInput"
+type="file"
+accept=".json"
+style="display:none"
+onchange="importBackup(event)"
+>
+
+<button class="btn blue" onclick="chooseBackup()">
+📥 选择备份文件
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>🛡️ 数据安全</h3>
+
+<div class="small">
+目前记录保存在这台手机浏览器的本机储存空间。
+建议定期使用「下载完整备份」。
+</div>
+
+<button class="btn red" onclick="clearAll()">
+🗑️ 清除全部记录
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const KEY="grab_driver_net_2_records";
+
+let records=
+JSON.parse(localStorage.getItem(KEY)||"[]");
+
+function money(n){
+return Number(n||0).toFixed(2);
+}
+
+function gross(r){
+return Number(r.income||0)+Number(r.bonus||0);
+}
+
+function expenses(r){
+return Number(r.petrol||0)
++Number(r.toll||0)
++Number(r.parking||0)
++Number(r.repair||0)
++Number(r.other||0);
+}
+
+function net(r){
+return gross(r)-expenses(r);
+}
+
+function updateSummary(){
+
+let income=0;
+let expense=0;
+let netTotal=0;
+
+records.forEach(r=>{
+income+=gross(r);
+expense+=expenses(r);
+netTotal+=net(r);
+});
+
+document.getElementById("recordCount")
+.textContent=records.length;
+
+document.getElementById("totalIncome")
+.textContent="RM "+money(income);
+
+document.getElementById("totalExpense")
+.textContent="RM "+money(expense);
+
+document.getElementById("totalNet")
+.textContent="RM "+money(netTotal);
+
+}
+
+function backupJSON(){
+
+let backup={
+app:"Grab Driver Net",
+version:"2.2",
+exportedAt:new Date().toISOString(),
+records:records
+};
+
+let text=
+JSON.stringify(backup,null,2);
+
+let blob=
+new Blob(
+[text],
+{type:"application/json"}
+);
+
+let url=
+URL.createObjectURL(blob);
+
+let a=
+document.createElement("a");
+
+let date=
+new Date()
+.toISOString()
+.slice(0,10);
+
+a.href=url;
+
+a.download=
+"grab-driver-net-backup-"+date+".json";
+
+document.body.appendChild(a);
+
+a.click();
+
+a.remove();
+
+URL.revokeObjectURL(url);
+
+}
+
+function exportCSV(){
+
+if(!records.length){
+
+alert("目前没有记录可以导出。");
+
+return;
+
+}
+
+let header=[
+"日期",
+"开始时间",
+"结束时间",
+"Grab收入",
+"Bonus",
+"Petrol",
+"Toll",
+"Parking",
+"维修",
+"其他开销",
+"KM",
+"Gross",
+"总开销",
+"净收入"
+];
+
+let rows=[header];
+
+records
+.slice()
+.sort((a,b)=>a.date.localeCompare(b.date))
+.forEach(r=>{
+
+rows.push([
+r.date||"",
+r.start||"",
+r.end||"",
+r.income||0,
+r.bonus||0,
+r.petrol||0,
+r.toll||0,
+r.parking||0,
+r.repair||0,
+r.other||0,
+r.km||0,
+gross(r).toFixed(2),
+expenses(r).toFixed(2),
+net(r).toFixed(2)
+]);
+
+});
+
+let csv=
+rows.map(row=>
+row.map(value=>{
+let s=String(value);
+if(
+s.includes(",")||
+s.includes('"')||
+s.includes("\n")
+){
+return '"'+s.replace(/"/g,'""')+'"';
+}
+return s;
+}).join(",")
+).join("\n");
+
+let blob=
+new Blob(
+["\ufeff"+csv],
+{type:"text/csv;charset=utf-8"}
+);
+
+let url=
+URL.createObjectURL(blob);
+
+let a=
+document.createElement("a");
+
+let date=
+new Date()
+.toISOString()
+.slice(0,10);
+
+a.href=url;
+
+a.download=
+"grab-driver-net-"+date+".csv";
+
+document.body.appendChild(a);
+
+a.click();
+
+a.remove();
+
+URL.revokeObjectURL(url);
+
+}
+
+function chooseBackup(){
+
+document.getElementById("fileInput").click();
+
+}
+
+function importBackup(event){
+
+let file=
+event.target.files[0];
+
+if(!file)return;
+
+let reader=
+new FileReader();
+
+reader.onload=function(){
+
+try{
+
+let data=
+JSON.parse(reader.result);
+
+let imported=data.records;
+
+if(!Array.isArray(imported)){
+
+alert("这个文件不是有效的 Grab Driver Net 备份文件。");
+
+return;
+
+}
+
+let existingIds=
+new Set(
+records.map(r=>r.id)
+);
+
+let added=0;
+
+imported.forEach(r=>{
+
+if(!r.id){
+
+r.id=
+Date.now().toString(36)+
+Math.random().toString(36).slice(2);
+
+}
+
+if(!existingIds.has(r.id)){
+
+records.push(r);
+
+existingIds.add(r.id);
+
+added++;
+
+}
+
+});
+
+localStorage.setItem(
+KEY,
+JSON.stringify(records)
+);
+
+updateSummary();
+
+alert(
+"恢复完成！\n\n"+
+"新增 "+added+" 条记录。\n"+
+"目前共有 "+records.length+" 条记录。"
+);
+
+}catch(e){
+
+alert("读取备份失败，请确认选择的是 Grab Driver Net 的 JSON 备份文件。");
+
+}
+
+};
+
+reader.readAsText(file);
+
+event.target.value="";
+
+}
+
+function clearAll(){
+
+if(!records.length){
+
+alert("目前没有记录。");
+
+return;
+
+}
+
+let first=
+confirm(
+"确定要清除全部记录吗？\n\n"+
+"建议先下载完整备份。"
+);
+
+if(!first)return;
+
+let second=
+confirm(
+"最后确认：\n\n"+
+"所有 "+records.length+
+" 条记录将从这台手机删除。\n\n"+
+"确定继续吗？"
+);
+
+if(!second)return;
+
+localStorage.removeItem(KEY);
+
+records=[];
+
+updateSummary();
+
+alert("全部记录已经清除。");
+
+}
+
+updateSummary();
+
+</script>
+
+</body>
+</html>

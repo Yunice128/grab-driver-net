@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 2.3</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#0f172a;font-family:system-ui,-apple-system,sans-serif}
+.app{max-width:640px;margin:auto;padding-bottom:40px}
+header{background:#111827;color:#fff;padding:22px 18px;border-radius:0 0 25px 25px}
+header h1{margin:0;font-size:23px}
+header p{margin:5px 0 0;color:#cbd5e1;font-size:12px}
+.card{background:#fff;margin:14px;padding:16px;border-radius:18px;box-shadow:0 2px 12px #0001}
+h3{margin:0 0 12px}
+.small{font-size:12px;color:#64748b}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#f8fafc;border-radius:14px;padding:13px}
+.stat span{font-size:12px;color:#64748b}
+.stat b{display:block;font-size:19px;margin-top:5px}
+.net{color:#059669}
+.big{font-size:36px!important}
+.progress{height:12px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:10px}
+.bar{height:100%;width:0;background:#10b981}
+.field{margin-top:10px}
+.field label{display:block;font-size:12px;color:#475569;margin-bottom:5px}
+.field input{width:100%;padding:11px;border:1px solid #dbe2ea;border-radius:11px;font-size:16px}
+.btn{border:0;border-radius:12px;padding:12px;width:100%;font-size:14px;font-weight:750;margin-top:10px}
+.green{background:#10b981;color:#fff}
+.blue{background:#2563eb;color:#fff}
+.gray{background:#e2e8f0;color:#0f172a}
+.target{background:#ecfdf5;border-radius:14px;padding:14px}
+.missing{color:#dc2626;font-weight:700}
+.good{color:#059669;font-weight:700}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+<h1>🚗 Grab Driver Net 2.3</h1>
+<p>司机收入 Dashboard</p>
+</header>
+
+<div class="card">
+<h3>📅 今天</h3>
+
+<div class="stats">
+
+<div class="stat">
+<span>Gross 收入</span>
+<b id="todayGross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>总开销</span>
+<b id="todayExpense">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🟢 今日净收入</span>
+<b class="net big" id="todayNet">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>⏱️ 工作时间</span>
+<b id="todayHours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span>📈 净收入/小时</span>
+<b id="todayHourly">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🚗 净收入/KM</span>
+<b id="todayKmRate">RM 0.00</b>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h3>🎯 今日目标</h3>
+
+<div class="field">
+<label>目标净收入（RM）</label>
+<input id="dailyTarget" type="number" step="1" value="250">
+</div>
+
+<div class="target">
+<div id="targetText">还差 RM 250.00</div>
+<div class="progress">
+<div class="bar" id="targetBar"></div>
+</div>
+<div class="small" id="targetPercent">0%</div>
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>📊 本周</h3>
+
+<div class="stats">
+
+<div class="stat">
+<span>Gross</span>
+<b id="weekGross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>开销</span>
+<b id="weekExpense">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>净收入</span>
+<b class="net" id="weekNet">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>工作天数</span>
+<b id="weekDays">0</b>
+</div>
+
+<div class="stat">
+<span>工作小时</span>
+<b id="weekHours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span>净收入/小时</span>
+<b id="weekHourly">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>总 KM</span>
+<b id="weekKm">0 km</b>
+</div>
+
+<div class="stat">
+<span>净收入/KM</span>
+<b id="weekKmRate">RM 0.00</b>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h3>📈 本月</h3>
+
+<div class="stats">
+
+<div class="stat">
+<span>Gross</span>
+<b id="monthGross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>开销</span>
+<b id="monthExpense">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🟢 净收入</span>
+<b class="net" id="monthNet">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>工作天数</span>
+<b id="monthDays">0</b>
+</div>
+
+<div class="stat">
+<span>工作小时</span>
+<b id="monthHours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span>净收入/小时</span>
+<b id="monthHourly">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>总 KM</span>
+<b id="monthKm">0 km</b>
+</div>
+
+<div class="stat">
+<span>净收入/KM</span>
+<b id="monthKmRate">RM 0.00</b>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h3>🎯 本月目标</h3>
+
+<div class="field">
+<label>目标净收入（RM）</label>
+<input id="monthlyTarget" type="number" step="100" value="5000">
+</div>
+
+<div class="target">
+<div id="monthTargetText">还差 RM 5,000.00</div>
+<div class="progress">
+<div class="bar" id="monthTargetBar"></div>
+</div>
+<div class="small" id="monthTargetPercent">0%</div>
+</div>
+
+</div>
+
+<div class="card">
+<div class="small">
+数据读取自 Grab Driver Net 2.x 的本机记录。
+不会删除你现有的记录。
+</div>
+</div>
+
+</div>
+
+<script>
+
+const KEY="grab_driver_net_2_records";
+
+let records=
+JSON.parse(localStorage.getItem(KEY)||"[]");
+
+function money(n){
+return Number(n||0).toFixed(2);
+}
+
+function gross(r){
+return Number(r.income||0)+Number(r.bonus||0);
+}
+
+function expense(r){
+return Number(r.petrol||0)
++Number(r.toll||0)
++Number(r.parking||0)
++Number(r.repair||0)
++Number(r.other||0);
+}
+
+function net(r){
+return gross(r)-expense(r);
+}
+
+function hours(r){
+
+if(!r.start||!r.end)return 0;
+
+let a=r.start.split(":");
+let b=r.end.split(":");
+
+let s=Number(a[0])*60+Number(a[1]);
+let e=Number(b[0])*60+Number(b[1]);
+
+if(e<s)e+=1440;
+
+return(e-s)/60;
+
+}
+
+function today(){
+
+return new Date()
+.toISOString()
+.slice(0,10);
+
+}
+
+function dateObj(s){
+return new Date(s+"T00:00:00");
+}
+
+function weekStart(){
+
+let d=dateObj(today());
+let day=d.getDay();
+let diff=day===0?6:day-1;
+
+d.setDate(d.getDate()-diff);
+
+return d;
+
+}
+
+function monthStart(){
+
+let d=dateObj(today());
+
+return new Date(
+d.getFullYear(),
+d.getMonth(),
+1
+);
+
+}
+
+function calculate(list){
+
+let g=0;
+let e=0;
+let n=0;
+let h=0;
+let km=0;
+
+list.forEach(r=>{
+
+g+=gross(r);
+e+=expense(r);
+n+=net(r);
+h+=hours(r);
+km+=Number(r.km||0);
+
+});
+
+return{
+gross:g,
+expense:e,
+net:n,
+hours:h,
+km:km,
+hourly:h?n/h:0,
+kmRate:km?n/km:0,
+days:list.length
+};
+
+}
+
+function todayData(){
+
+return calculate(
+records.filter(
+r=>r.date===today()
+)
+);
+
+}
+
+function weekData(){
+
+let start=weekStart();
+let end=dateObj(today());
+
+return calculate(
+records.filter(r=>{
+let d=dateObj(r.date);
+return d>=start&&d<=end;
+})
+);
+
+}
+
+function monthData(){
+
+let start=monthStart();
+let end=dateObj(today());
+
+return calculate(
+records.filter(r=>{
+let d=dateObj(r.date);
+return d>=start&&d<=end;
+})
+);
+
+}
+
+function set(id,value){
+document.getElementById(id).textContent=value;
+}
+
+function renderToday(){
+
+let x=todayData();
+
+set("todayGross","RM "+money(x.gross));
+set("todayExpense","RM "+money(x.expense));
+set("todayNet","RM "+money(x.net));
+set("todayHours",x.hours.toFixed(1)+" h");
+set("todayHourly","RM "+money(x.hourly));
+set("todayKmRate","RM "+money(x.kmRate));
+
+}
+
+function renderWeek(){
+
+let x=weekData();
+
+set("weekGross","RM "+money(x.gross));
+set("weekExpense","RM "+money(x.expense));
+set("weekNet","RM "+money(x.net));
+set("weekDays",x.days);
+set("weekHours",x.hours.toFixed(1)+" h");
+set("weekHourly","RM "+money(x.hourly));
+set("weekKm",x.km.toFixed(1)+" km");
+set("weekKmRate","RM "+money(x.kmRate));
+
+}
+
+function renderMonth(){
+
+let x=monthData();
+
+set("monthGross","RM "+money(x.gross));
+set("monthExpense","RM "+money(x.expense));
+set("monthNet","RM "+money(x.net));
+set("monthDays",x.days);
+set("monthHours",x.hours.toFixed(1)+" h");
+set("monthHourly","RM "+money(x.hourly));
+set("monthKm",x.km.toFixed(1)+" km");
+set("monthKmRate","RM "+money(x.kmRate));
+
+}
+
+function updateDailyTarget(){
+
+let target=
+Number(
+document.getElementById("dailyTarget").value||0
+);
+
+let netToday=todayData().net;
+
+let percent=
+target>0?
+Math.min(netToday/target*100,100):
+0;
+
+let remaining=
+Math.max(target-netToday,0);
+
+if(netToday>=target){
+
+document.getElementById("targetText").innerHTML=
+'<span class="good">🎉 今日目标已达到！</span>';
+
+}else{
+
+document.getElementById("targetText").textContent=
+"还差 RM "+money(remaining);
+
+}
+
+document.getElementById("targetBar").style.width=
+percent+"%";
+
+set(
+"targetPercent",
+percent.toFixed(0)+"%"
+);
+
+}
+
+function updateMonthlyTarget(){
+
+let target=
+Number(
+document.getElementById("monthlyTarget").value||0
+);
+
+let n=monthData().net;
+
+let percent=
+target>0?
+Math.min(n/target*100,100):
+0;
+
+let remaining=
+Math.max(target-n,0);
+
+if(n>=target){
+
+document.getElementById("monthTargetText").innerHTML=
+'<span class="good">🎉 本月目标已达到！</span>';
+
+}else{
+
+document.getElementById("monthTargetText").textContent=
+"还差 RM "+money(remaining);
+
+}
+
+document.getElementById("monthTargetBar").style.width=
+percent+"%";
+
+set(
+"monthTargetPercent",
+percent.toFixed(0)+"%"
+);
+
+}
+
+function render(){
+
+renderToday();
+renderWeek();
+renderMonth();
+updateDailyTarget();
+updateMonthlyTarget();
+
+}
+
+document.getElementById("dailyTarget")
+.addEventListener("input",updateDailyTarget);
+
+document.getElementById("monthlyTarget")
+.addEventListener("input",updateMonthlyTarget);
+
+render();
+
+</script>
+
+</body>
+</html>

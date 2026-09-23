@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 2.1</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#0f172a;font-family:system-ui,-apple-system,sans-serif}
+.app{max-width:620px;margin:auto;padding-bottom:35px}
+header{background:#111827;color:#fff;padding:22px 18px;border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:23px}
+header p{margin:5px 0 0;color:#cbd5e1;font-size:12px}
+.card{background:#fff;margin:14px;padding:16px;border-radius:18px;box-shadow:0 2px 12px #0001}
+h3{margin:0 0 12px}
+.small{font-size:12px;color:#64748b}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#f8fafc;border-radius:14px;padding:13px}
+.stat span{font-size:12px;color:#64748b}
+.stat b{display:block;font-size:19px;margin-top:5px}
+.net{color:#059669}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-top:9px}
+.field label{display:block;font-size:12px;color:#475569;margin-bottom:4px}
+.field input,.field select{width:100%;padding:11px;border:1px solid #dbe2ea;border-radius:11px;font-size:16px;background:white}
+.btn{border:0;border-radius:12px;padding:12px;width:100%;font-size:14px;font-weight:750;margin-top:10px}
+.green{background:#10b981;color:#fff}
+.blue{background:#2563eb;color:#fff}
+.gray{background:#e2e8f0;color:#0f172a}
+.item{padding:14px 0;border-bottom:1px solid #edf2f7}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.actions{display:flex;gap:7px;margin-top:9px}
+.actions button{flex:1;border:0;border-radius:9px;padding:8px;font-weight:650}
+.edit{background:#dbeafe;color:#1d4ed8}
+.delete{background:#fee2e2;color:#b91c1c}
+.hidden{display:none}
+.badge{background:#dcfce7;color:#166534;padding:4px 8px;border-radius:99px;font-size:11px}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+<h1>🚗 Grab Driver Net 2.1</h1>
+<p>收入 · 开销 · 工作时间 · 净收入</p>
+</header>
+
+<div class="card">
+<h3>📊 收入总览</h3>
+
+<div class="stats">
+<div class="stat">
+<span>Gross 收入</span>
+<b id="totalGross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>总开销</span>
+<b id="totalExpenses">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🟢 净收入</span>
+<b class="net" id="totalNet">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>⏱️ 工作时间</span>
+<b id="totalHours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span>📈 平均净收入/小时</span>
+<b id="avgHourly">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🚗 总公里数</span>
+<b id="totalKm">0 km</b>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3>🔎 日期筛选</h3>
+
+<div class="field">
+<label>查看范围</label>
+<select id="filter" onchange="applyFilter()">
+<option value="all">全部记录</option>
+<option value="today">今天</option>
+<option value="yesterday">昨天</option>
+<option value="week">本周</option>
+<option value="month">本月</option>
+<option value="custom">自定义日期</option>
+</select>
+</div>
+
+<div id="customDates" class="grid hidden">
+
+<div class="field">
+<label>开始日期</label>
+<input id="filterStart" type="date" onchange="applyFilter()">
+</div>
+
+<div class="field">
+<label>结束日期</label>
+<input id="filterEnd" type="date" onchange="applyFilter()">
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h3 id="formTitle">➕ 新增工作记录</h3>
+
+<div class="field">
+<label>📅 工作日期</label>
+<input id="date" type="date">
+</div>
+
+<div class="grid">
+
+<div class="field">
+<label>🕐 开始时间</label>
+<input id="start" type="time">
+</div>
+
+<div class="field">
+<label>🕐 结束时间</label>
+<input id="end" type="time">
+</div>
+
+<div class="field">
+<label>💰 Grab 收入</label>
+<input id="income" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🎁 Bonus / Incentive</label>
+<input id="bonus" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>⛽ Petrol</label>
+<input id="petrol" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🛣️ Toll</label>
+<input id="toll" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🅿️ Parking</label>
+<input id="parking" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🔧 维修</label>
+<input id="repair" type="number" step="0.01">
+</div>
+
+</div>
+
+<div class="field">
+<label>💸 其他开销</label>
+<input id="other" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>🚗 工作公里数</label>
+<input id="km" type="number" step="0.1">
+</div>
+
+<button class="btn green" onclick="saveRecord()">
+💾 保存记录
+</button>
+
+<button id="cancelBtn" class="btn gray hidden" onclick="cancelEdit()">
+取消编辑
+</button>
+
+</div>
+
+<div class="card">
+
+<div class="row">
+<h3>📅 历史记录</h3>
+<span id="recordCount" class="badge">0 天</span>
+</div>
+
+<div id="history"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const KEY="grab_driver_net_2_records";
+
+let records=JSON.parse(localStorage.getItem(KEY)||"[]");
+let editingId=null;
+
+function $(id){
+return document.getElementById(id);
+}
+
+function today(){
+return new Date().toISOString().slice(0,10);
+}
+
+function money(n){
+return Number(n||0).toFixed(2);
+}
+
+function newId(){
+return Date.now().toString(36)+Math.random().toString(36).slice(2);
+}
+
+function gross(r){
+return Number(r.income||0)+Number(r.bonus||0);
+}
+
+function expenses(r){
+return Number(r.petrol||0)
++Number(r.toll||0)
++Number(r.parking||0)
++Number(r.repair||0)
++Number(r.other||0);
+}
+
+function net(r){
+return gross(r)-expenses(r);
+}
+
+function hours(r){
+
+if(!r.start||!r.end)return 0;
+
+let a=r.start.split(":");
+let b=r.end.split(":");
+
+let s=Number(a[0])*60+Number(a[1]);
+let e=Number(b[0])*60+Number(b[1]);
+
+if(e<s)e+=1440;
+
+return(e-s)/60;
+}
+
+function saveData(){
+localStorage.setItem(KEY,JSON.stringify(records));
+}
+
+function formData(){
+
+return{
+date:$("date").value,
+start:$("start").value,
+end:$("end").value,
+income:Number($("income").value||0),
+bonus:Number($("bonus").value||0),
+petrol:Number($("petrol").value||0),
+toll:Number($("toll").value||0),
+parking:Number($("parking").value||0),
+repair:Number($("repair").value||0),
+other:Number($("other").value||0),
+km:Number($("km").value||0)
+};
+
+}
+
+function saveRecord(){
+
+let r=formData();
+
+if(!r.date){
+alert("请选择工作日期");
+return;
+}
+
+if(editingId){
+
+let i=records.findIndex(x=>x.id===editingId);
+
+if(i!==-1){
+r.id=editingId;
+records[i]=r;
+}
+
+}else{
+
+r.id=newId();
+records.push(r);
+
+}
+
+saveData();
+
+editingId=null;
+resetForm();
+renderAll();
+
+alert("记录已保存！");
+
+}
+
+function editRecord(id){
+
+let r=records.find(x=>x.id===id);
+
+if(!r)return;
+
+editingId=id;
+
+$("date").value=r.date||"";
+$("start").value=r.start||"";
+$("end").value=r.end||"";
+$("income").value=r.income||"";
+$("bonus").value=r.bonus||"";
+$("petrol").value=r.petrol||"";
+$("toll").value=r.toll||"";
+$("parking").value=r.parking||"";
+$("repair").value=r.repair||"";
+$("other").value=r.other||"";
+$("km").value=r.km||"";
+
+$("formTitle").textContent="✏️ 编辑工作记录";
+$("cancelBtn").classList.remove("hidden");
+
+window.scrollTo({top:0,behavior:"smooth"});
+
+}
+
+function deleteRecord(id){
+
+if(!confirm("确定删除这一天的记录吗？"))return;
+
+records=records.filter(x=>x.id!==id);
+
+saveData();
+
+if(editingId===id){
+editingId=null;
+resetForm();
+}
+
+renderAll();
+
+}
+
+function resetForm(){
+
+$("date").value=today();
+$("start").value="";
+$("end").value="";
+$("income").value="";
+$("bonus").value="";
+$("petrol").value="";
+$("toll").value="";
+$("parking").value="";
+$("repair").value="";
+$("other").value="";
+$("km").value="";
+
+$("formTitle").textContent="➕ 新增工作记录";
+$("cancelBtn").classList.add("hidden");
+
+}
+
+function cancelEdit(){
+
+editingId=null;
+resetForm();
+renderAll();
+
+}
+
+function dateObj(s){
+return new Date(s+"T00:00:00");
+}
+
+function startOfWeek(){
+
+let d=dateObj(today());
+let day=d.getDay();
+let diff=day===0?6:day-1;
+
+d.setDate(d.getDate()-diff);
+
+return d;
+
+}
+
+function filteredRecords(){
+
+let f=$("filter").value;
+
+let now=dateObj(today());
+
+if(f==="all")return [...records];
+
+if(f==="today"){
+return records.filter(r=>r.date===today());
+}
+
+if(f==="yesterday"){
+
+let d=new Date(now);
+d.setDate(d.getDate()-1);
+
+let s=d.toISOString().slice(0,10);
+
+return records.filter(r=>r.date===s);
+
+}
+
+if(f==="week"){
+
+let start=startOfWeek();
+
+return records.filter(r=>{
+let d=dateObj(r.date);
+return d>=start&&d<=now;
+});
+
+}
+
+if(f==="month"){
+
+let y=now.getFullYear();
+let m=now.getMonth();
+
+return records.filter(r=>{
+let d=dateObj(r.date);
+return d.getFullYear()===y&&d.getMonth()===m;
+});
+
+}
+
+if(f==="custom"){
+
+let a=$("filterStart").value;
+let b=$("filterEnd").value;
+
+if(!a||!b)return [];
+
+return records.filter(r=>r.date>=a&&r.date<=b);
+
+}
+
+return [...records];
+
+}
+
+function renderSummary(){
+
+let list=filteredRecords();
+
+let g=0;
+let e=0;
+let n=0;
+let h=0;
+let km=0;
+
+list.forEach(r=>{
+g+=gross(r);
+e+=expenses(r);
+n+=net(r);
+h+=hours(r);
+km+=Number(r.km||0);
+});
+
+$("totalGross").textContent="RM "+money(g);
+$("totalExpenses").textContent="RM "+money(e);
+$("totalNet").textContent="RM "+money(n);
+$("totalHours").textContent=h.toFixed(1)+" h";
+$("avgHourly").textContent=
+"RM "+money(h>0?n/h:0);
+$("totalKm").textContent=km.toFixed(1)+" km";
+
+}
+
+function renderHistory(){
+
+let list=filteredRecords()
+.sort((a,b)=>b.date.localeCompare(a.date));
+
+$("recordCount").textContent=list.length+" 天";
+
+if(!list.length){
+
+$("history").innerHTML=
+'<div class="small" style="padding:15px 0">这个日期范围没有记录</div>';
+
+return;
+
+}
+
+$("history").innerHTML=list.map(r=>{
+
+let h=hours(r);
+
+return`
+
+<div class="item">
+
+<div class="row">
+
+<b>${r.date}</b>
+
+<b style="color:#059669">
+RM ${money(net(r))}
+</b>
+
+</div>
+
+<div class="small">
+Gross RM ${money(gross(r))}
+ · 开销 RM ${money(expenses(r))}
+</div>
+
+<div class="small">
+🕐 ${h.toFixed(1)} 小时
+ · 📈 RM ${money(h>0?net(r)/h:0)}/小时
+ · 🚗 ${r.km||0} km
+</div>
+
+<div class="actions">
+
+<button class="edit"
+onclick="editRecord('${r.id}')">
+✏️ 编辑
+</button>
+
+<button class="delete"
+onclick="deleteRecord('${r.id}')">
+🗑️ 删除
+</button>
+
+</div>
+
+</div>
+
+`;
+
+}).join("");
+
+}
+
+function applyFilter(){
+
+let custom=$("filter").value==="custom";
+
+$("customDates").classList.toggle("hidden",!custom);
+
+renderAll();
+
+}
+
+function renderAll(){
+
+renderSummary();
+renderHistory();
+
+}
+
+[
+"date","start","end","income","bonus",
+"petrol","toll","parking","repair","other","km"
+].forEach(id=>{
+
+$(id).addEventListener("input",()=>{
+renderAll();
+});
+
+});
+
+resetForm();
+renderAll();
+
+</script>
+
+</body>
+</html>

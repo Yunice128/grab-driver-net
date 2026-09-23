@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 3.0</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+background:#f1f5f9;
+color:#0f172a;
+font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+.app{max-width:680px;margin:auto;padding-bottom:80px}
+header{
+background:#111827;
+color:white;
+padding:20px 16px 18px;
+border-radius:0 0 24px 24px
+}
+header h1{margin:0;font-size:23px}
+header p{margin:5px 0 0;color:#cbd5e1;font-size:12px}
+
+.nav{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:7px;
+padding:12px 14px 0
+}
+.nav button{
+border:0;
+border-radius:11px;
+padding:10px 5px;
+font-weight:700;
+background:#e2e8f0;
+color:#334155
+}
+.nav button.active{
+background:#111827;
+color:white
+}
+
+.page{display:none}
+.page.active{display:block}
+
+.card{
+background:white;
+margin:14px;
+padding:16px;
+border-radius:18px;
+box-shadow:0 2px 12px #0001
+}
+h2,h3{margin:0 0 13px}
+.small{font-size:12px;color:#64748b}
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px
+}
+.stat{
+background:#f8fafc;
+padding:12px;
+border-radius:14px
+}
+.stat span{
+display:block;
+font-size:12px;
+color:#64748b
+}
+.stat b{
+display:block;
+font-size:18px;
+margin-top:4px
+}
+.net{color:#059669}
+.big{font-size:30px!important}
+
+.field{margin-top:10px}
+.field label{
+display:block;
+font-size:12px;
+color:#475569;
+margin-bottom:5px
+}
+.field input,.field select{
+width:100%;
+padding:11px;
+border:1px solid #dbe2ea;
+border-radius:11px;
+font-size:16px;
+background:white
+}
+
+.btn{
+width:100%;
+border:0;
+border-radius:12px;
+padding:12px;
+margin-top:10px;
+font-weight:750;
+font-size:14px
+}
+.green{background:#10b981;color:white}
+.blue{background:#2563eb;color:white}
+.gray{background:#e2e8f0;color:#0f172a}
+.red{background:#dc2626;color:white}
+
+.target{
+background:#ecfdf5;
+padding:13px;
+border-radius:14px
+}
+.progress{
+height:11px;
+background:#e2e8f0;
+border-radius:20px;
+overflow:hidden;
+margin-top:9px
+}
+.bar{
+height:100%;
+width:0;
+background:#10b981
+}
+
+.record{
+border-bottom:1px solid #e5e7eb;
+padding:13px 0
+}
+.record:last-child{border-bottom:0}
+.recordTop{
+display:flex;
+justify-content:space-between;
+gap:8px
+}
+.actions{
+display:flex;
+gap:7px;
+margin-top:9px
+}
+.actions button{
+flex:1;
+border:0;
+border-radius:9px;
+padding:8px;
+font-weight:700
+}
+.edit{background:#dbeafe;color:#1d4ed8}
+.delete{background:#fee2e2;color:#b91c1c}
+
+.hidden{display:none}
+
+.notice{
+background:#eff6ff;
+padding:12px;
+border-radius:12px;
+font-size:13px;
+line-height:1.55
+}
+.warning{
+background:#fff7ed;
+padding:12px;
+border-radius:12px;
+font-size:13px;
+line-height:1.55
+}
+
+@media(max-width:430px){
+.grid{gap:7px}
+.stat{padding:10px}
+.stat b{font-size:16px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+<h1>🚗 Grab Driver Net 3.0</h1>
+<p>收入 · 开销 · 时间 · KM · 净收入</p>
+</header>
+
+<div class="nav">
+<button class="active" onclick="showPage('dashboard',this)">📊 首页</button>
+<button onclick="showPage('records',this)">📅 记录</button>
+<button onclick="showPage('tools',this)">💾 数据</button>
+</div>
+
+<!-- DASHBOARD -->
+
+<section id="dashboard" class="page active">
+
+<div class="card">
+<h3>📅 今日</h3>
+
+<div class="grid">
+
+<div class="stat">
+<span>Gross</span>
+<b id="tdGross">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>开销</span>
+<b id="tdExp">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🟢 净收入</span>
+<b class="net big" id="tdNet">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>⏱️ 工作时间</span>
+<b id="tdHours">0.0 h</b>
+</div>
+
+<div class="stat">
+<span>📈 RM/小时</span>
+<b id="tdHourRate">RM 0.00</b>
+</div>
+
+<div class="stat">
+<span>🚗 RM/KM</span>
+<b id="tdKmRate">RM 0.00</b>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<h3>🎯 今日目标</h3>
+
+<div class="field">
+<label>目标净收入 RM</label>
+<input id="dailyTarget" type="number" value="250">
+</div>
+
+<div class="target">
+<div id="dailyText">还差 RM 250.00</div>
+<div class="progress">
+<div class="bar" id="dailyBar"></div>
+</div>
+<div class="small" id="dailyPercent">0%</div>
+</div>
+</div>
+
+<div class="card">
+<h3>📊 本周</h3>
+
+<div class="grid">
+
+<div class="stat"><span>Gross</span><b id="wkGross">RM 0.00</b></div>
+<div class="stat"><span>开销</span><b id="wkExp">RM 0.00</b></div>
+<div class="stat"><span>净收入</span><b class="net" id="wkNet">RM 0.00</b></div>
+<div class="stat"><span>工作天数</span><b id="wkDays">0</b></div>
+<div class="stat"><span>工作小时</span><b id="wkHours">0.0 h</b></div>
+<div class="stat"><span>RM/小时</span><b id="wkHourRate">RM 0.00</b></div>
+<div class="stat"><span>KM</span><b id="wkKm">0</b></div>
+<div class="stat"><span>RM/KM</span><b id="wkKmRate">RM 0.00</b></div>
+
+</div>
+</div>
+
+<div class="card">
+<h3>📈 本月</h3>
+
+<div class="grid">
+
+<div class="stat"><span>Gross</span><b id="moGross">RM 0.00</b></div>
+<div class="stat"><span>开销</span><b id="moExp">RM 0.00</b></div>
+<div class="stat"><span>🟢 净收入</span><b class="net" id="moNet">RM 0.00</b></div>
+<div class="stat"><span>工作天数</span><b id="moDays">0</b></div>
+<div class="stat"><span>工作小时</span><b id="moHours">0.0 h</b></div>
+<div class="stat"><span>RM/小时</span><b id="moHourRate">RM 0.00</b></div>
+<div class="stat"><span>KM</span><b id="moKm">0</b></div>
+<div class="stat"><span>RM/KM</span><b id="moKmRate">RM 0.00</b></div>
+
+</div>
+</div>
+
+<div class="card">
+<h3>🎯 本月目标</h3>
+
+<div class="field">
+<label>目标净收入 RM</label>
+<input id="monthlyTarget" type="number" value="5000">
+</div>
+
+<div class="target">
+<div id="monthlyText">还差 RM 5,000.00</div>
+<div class="progress">
+<div class="bar" id="monthlyBar"></div>
+</div>
+<div class="small" id="monthlyPercent">0%</div>
+</div>
+</div>
+
+</section>
+
+<!-- RECORDS -->
+
+<section id="records" class="page">
+
+<div class="card">
+
+<h3 id="formTitle">➕ 新增工作记录</h3>
+
+<div class="field">
+<label>📅 日期</label>
+<input id="date" type="date">
+</div>
+
+<div class="grid">
+
+<div class="field">
+<label>开始时间</label>
+<input id="start" type="time">
+</div>
+
+<div class="field">
+<label>结束时间</label>
+<input id="end" type="time">
+</div>
+
+<div class="field">
+<label>Grab 收入</label>
+<input id="income" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>Bonus</label>
+<input id="bonus" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>Petrol</label>
+<input id="petrol" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>Toll</label>
+<input id="toll" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>Parking</label>
+<input id="parking" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>维修</label>
+<input id="repair" type="number" step="0.01">
+</div>
+
+</div>
+
+<div class="field">
+<label>其他开销</label>
+<input id="other" type="number" step="0.01">
+</div>
+
+<div class="field">
+<label>工作 KM</label>
+<input id="km" type="number" step="0.1">
+</div>
+
+<button class="btn green" onclick="saveRecord()">💾 保存记录</button>
+
+<button id="cancelBtn"
+class="btn gray hidden"
+onclick="cancelEdit()">取消编辑</button>
+
+</div>
+
+<div class="card">
+
+<h3>📅 历史记录</h3>
+
+<div class="field">
+<label>筛选</label>
+<select id="filter" onchange="renderRecords()">
+<option value="all">全部</option>
+<option value="today">今天</option>
+<option value="week">本周</option>
+<option value="month">本月</option>
+</select>
+</div>
+
+<div id="history"></div>
+
+</div>
+
+</section>
+
+<!-- TOOLS -->
+
+<section id="tools" class="page">
+
+<div class="card">
+
+<h3>💾 数据备份</h3>
+
+<div class="notice">
+建议定期下载完整备份。换手机时，可以使用备份文件恢复资料。
+</div>
+
+<button class="btn blue" onclick="backupJSON()">
+💾 下载完整备份
+</button>
+
+<button class="btn green" onclick="exportCSV()">
+📊 导出 CSV / Excel
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>📥 恢复资料</h3>
+
+<div class="warning">
+恢复会把备份中没有的记录加入目前资料，不会覆盖现有记录。
+</div>
+
+<input
+id="backupFile"
+type="file"
+accept=".json"
+style="display:none"
+onchange="importBackup(event)"
+>
+
+<button class="btn blue"
+onclick="document.getElementById('backupFile').click()">
+📥 选择备份文件
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>🛡️ 数据状态</h3>
+
+<div class="stats">
+
+<div class="stat">
+<span>记录天数</span>
+<b id="toolDays">0</b>
+</div>
+
+<div class="stat">
+<span>净收入</span>
+<b class="net" id="toolNet">RM 0.00</b>
+</div>
+
+</div>
+
+<button class="btn red" onclick="clearAll()">
+🗑️ 清除全部记录
+</button>
+
+</div>
+
+</section>
+
+</div>
+
+<script>
+
+const KEY="grab_driver_net_2_records";
+
+let records=JSON.parse(localStorage.getItem(KEY)||"[]");
+let editingId=null;
+
+function $(id){
+return document.getElementById(id);
+}
+
+function money(n){
+return Number(n||0).toFixed(2);
+}
+
+function today(){
+return new Date().toISOString().slice(0,10);
+}
+
+function gross(r){
+return Number(r.income||0)+Number(r.bonus||0);
+}
+
+function expense(r){
+return Number(r.petrol||0)+
+Number(r.toll||0)+
+Number(r.parking||0)+
+Number(r.repair||0)+
+Number(r.other||0);
+}
+
+function net(r){
+return gross(r)-expense(r);
+}
+
+function hours(r){
+
+if(!r.start||!r.end)return 0;
+
+let a=r.start.split(":");
+let b=r.end.split(":");
+
+let s=Number(a[0])*60+Number(a[1]);
+let e=Number(b[0])*60+Number(b[1]);
+
+if(e<s)e+=1440;
+
+return(e-s)/60;
+
+}
+
+function dateObj(s){
+return new Date(s+"T00:00:00");
+}
+
+function weekStart(){
+
+let d=dateObj(today());
+let day=d.getDay();
+let diff=day===0?6:day-1;
+
+d.setDate(d.getDate()-diff);
+
+return d;
+
+}
+
+function monthStart(){
+
+let d=dateObj(today());
+
+return new Date(
+d.getFullYear(),
+d.getMonth(),
+1
+);
+
+}
+
+function calc(list){
+
+let g=0,e=0,n=0,h=0,km=0;
+
+list.forEach(r=>{
+g+=gross(r);
+e+=expense(r);
+n+=net(r);
+h+=hours(r);
+km+=Number(r.km||0);
+});
+
+return{
+gross:g,
+expense:e,
+net:n,
+hours:h,
+km:km,
+days:list.length,
+hourRate:h?n/h:0,
+kmRate:km?n/km:0
+};
+
+}
+
+function getToday(){
+return calc(records.filter(r=>r.date===today()));
+}
+
+function getWeek(){
+
+let a=weekStart();
+let b=dateObj(today());
+
+return calc(
+records.filter(r=>{
+let d=dateObj(r.date);
+return d>=a&&d<=b;
+})
+);
+
+}
+
+function getMonth(){
+
+let a=monthStart();
+let b=dateObj(today());
+
+return calc(
+records.filter(r=>{
+let d=dateObj(r.date);
+return d>=a&&d<=b;
+})
+);
+
+}
+
+function set(id,text){
+$(id).textContent=text;
+}
+
+function renderDashboard(){
+
+let t=getToday();
+let w=getWeek();
+let m=getMonth();
+
+set("tdGross","RM "+money(t.gross));
+set("tdExp","RM "+money(t.expense));
+set("tdNet","RM "+money(t.net));
+set("tdHours",t.hours.toFixed(1)+" h");
+set("tdHourRate","RM "+money(t.hourRate));
+set("tdKmRate","RM "+money(t.kmRate));
+
+set("wkGross","RM "+money(w.gross));
+set("wkExp","RM "+money(w.expense));
+set("wkNet","RM "+money(w.net));
+set("wkDays",w.days);
+set("wkHours",w.hours.toFixed(1)+" h");
+set("wkHourRate","RM "+money(w.hourRate));
+set("wkKm",w.km.toFixed(1));
+set("wkKmRate","RM "+money(w.kmRate));
+
+set("moGross","RM "+money(m.gross));
+set("moExp","RM "+money(m.expense));
+set("moNet","RM "+money(m.net));
+set("moDays",m.days);
+set("moHours",m.hours.toFixed(1)+" h");
+set("moHourRate","RM "+money(m.hourRate));
+set("moKm",m.km.toFixed(1));
+set("moKmRate","RM "+money(m.kmRate));
+
+updateTargets();
+
+}
+
+function updateTargets(){
+
+let d=getToday().net;
+let dt=Number($("dailyTarget").value||0);
+
+let dp=dt>0?Math.min(d/dt*100,100):0;
+
+$("dailyBar").style.width=dp+"%";
+set("dailyPercent",dp.toFixed(0)+"%");
+
+if(d>=dt&&dt>0){
+$("dailyText").textContent="🎉 今日目标已达到！";
+}else{
+$("dailyText").textContent="还差 RM "+money(Math.max(dt-d,0));
+}
+
+let m=getMonth().net;
+let mt=Number($("monthlyTarget").value||0);
+
+let mp=mt>0?Math.min(m/mt*100,100):0;
+
+$("monthlyBar").style.width=mp+"%";
+set("monthlyPercent",mp.toFixed(0)+"%");
+
+if(m>=mt&&mt>0){
+$("monthlyText").textContent="🎉 本月目标已达到！";
+}else{
+$("monthlyText").textContent="还差 RM "+money(Math.max(mt-m,0));
+}
+
+}
+
+function showPage(id,btn){
+
+document.querySelectorAll(".page")
+.forEach(x=>x.classList.remove("active"));
+
+$(id).classList.add("active");
+
+document.querySelectorAll(".nav button")
+.forEach(x=>x.classList.remove("active"));
+
+btn.classList.add("active");
+
+if(id==="dashboard")renderDashboard();
+if(id==="records")renderRecords();
+if(id==="tools")renderTools();
+
+window.scrollTo({top:0,behavior:"smooth"});
+
+}
+
+function resetForm(){
+
+$("date").value=today();
+$("start").value="";
+$("end").value="";
+$("income").value="";
+$("bonus").value="";
+$("petrol").value="";
+$("toll").value="";
+$("parking").value="";
+$("repair").value="";
+$("other").value="";
+$("km").value="";
+
+$("formTitle").textContent="➕ 新增工作记录";
+$("cancelBtn").classList.add("hidden");
+
+editingId=null;
+
+}
+
+function saveRecord(){
+
+let r={
+date:$("date").value,
+start:$("start").value,
+end:$("end").value,
+income:Number($("income").value||0),
+bonus:Number($("bonus").value||0),
+petrol:Number($("petrol").value||0),
+toll:Number($("toll").value||0),
+parking:Number($("parking").value||0),
+repair:Number($("repair").value||0),
+other:Number($("other").value||0),
+km:Number($("km").value||0)
+};
+
+if(!r.date){
+alert("请选择日期");
+return;
+}
+
+if(editingId){
+
+let i=records.findIndex(x=>x.id===editingId);
+
+if(i!==-1){
+r.id=editingId;
+records[i]=r;
+}
+
+}else{
+
+r.id=
+Date.now().toString(36)+
+Math.random().toString(36).slice(2);
+
+records.push(r);
+
+}
+
+localStorage.setItem(KEY,JSON.stringify(records));
+
+resetForm();
+
+renderAll();
+
+alert("记录已保存");
+
+}
+
+function editRecord(id){
+
+let r=records.find(x=>x.id===id);
+if(!r)return;
+
+editingId=id;
+
+$("date").value=r.date||"";
+$("start").value=r.start||"";
+$("end").value=r.end||"";
+$("income").value=r.income||"";
+$("bonus").value=r.bonus||"";
+$("petrol").value=r.petrol||"";
+$("toll").value=r.toll||"";
+$("parking").value=r.parking||"";
+$("repair").value=r.repair||"";
+$("other").value=r.other||"";
+$("km").value=r.km||"";
+
+$("formTitle").textContent="✏️ 编辑工作记录";
+$("cancelBtn").classList.remove("hidden");
+
+window.scrollTo({top:0,behavior:"smooth"});
+
+}
+
+function deleteRecord(id){
+
+if(!confirm("确定删除这一天的记录吗？"))return;
+
+records=records.filter(x=>x.id!==id);
+
+localStorage.setItem(KEY,JSON.stringify(records));
+
+renderAll();
+
+}
+
+function cancelEdit(){
+resetForm();
+}
+
+function filterRecords(){
+
+let f=$("filter").value;
+
+if(f==="all")return [...records];
+
+if(f==="today"){
+return records.filter(r=>r.date===today());
+}
+
+if(f==="week"){
+
+let a=weekStart();
+let b=dateObj(today());
+
+return records.filter(r=>{
+let d=dateObj(r.date);
+return d>=a&&d<=b;
+});
+
+}
+
+if(f==="month"){
+
+let a=monthStart();
+let b=dateObj(today());
+
+return records.filter(r=>{
+let d=dateObj(r.date);
+return d>=a&&d<=b;
+});
+
+}
+
+return [...records];
+
+}
+
+function renderRecords(){
+
+let list=filterRecords()
+.sort((a,b)=>b.date.localeCompare(a.date));
+
+if(!list.length){
+
+$("history").innerHTML=
+'<div class="small" style="padding:15px 0">没有记录</div>';
+
+return;
+
+}
+
+$("history").innerHTML=list.map(r=>{
+
+let h=hours(r);
+let n=net(r);
+
+return`
+
+<div class="record">
+
+<div class="recordTop">
+<b>${r.date}</b>
+<b class="net">RM ${money(n)}</b>
+</div>
+
+<div class="small">
+Gross RM ${money(gross(r))}
+ · 开销 RM ${money(expense(r))}
+</div>
+
+<div class="small">
+⏱️ ${h.toFixed(1)} h
+ · RM ${money(h?n/h:0)}/h
+ · 🚗 ${Number(r.km||0).toFixed(1)} km
+ · RM ${money(r.km?n/r.km:0)}/km
+</div>
+
+<div class="actions">
+
+<button class="edit"
+onclick="editRecord('${r.id}')">
+✏️ 编辑
+</button>
+
+<button class="delete"
+onclick="deleteRecord('${r.id}')">
+🗑️ 删除
+</button>
+
+</div>
+
+</div>
+
+`;
+
+}).join("");
+
+}
+
+function renderTools(){
+
+let x=calc(records);
+
+set("toolDays",records.length);
+set("toolNet","RM "+money(x.net));
+
+}
+
+function backupJSON(){
+
+let data={
+app:"Grab Driver Net",
+version:"3.0",
+exportedAt:new Date().toISOString(),
+records:records
+};
+
+let blob=new Blob(
+[JSON.stringify(data,null,2)],
+{type:"application/json"}
+);
+
+let url=URL.createObjectURL(blob);
+let a=document.createElement("a");
+
+a.href=url;
+a.download=
+"grab-driver-net-backup-"+
+today()+".json";
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+}
+
+function exportCSV(){
+
+if(!records.length){
+alert("目前没有记录");
+return;
+}
+
+let rows=[[
+"日期","开始","结束",
+"Grab收入","Bonus",
+"Petrol","Toll","Parking",
+"维修","其他",
+"KM","Gross","开销","净收入"
+]];
+
+records
+.slice()
+.sort((a,b)=>a.date.localeCompare(b.date))
+.forEach(r=>{
+
+rows.push([
+r.date,r.start,r.end,
+r.income||0,r.bonus||0,
+r.petrol||0,r.toll||0,
+r.parking||0,r.repair||0,
+r.other||0,r.km||0,
+gross(r).toFixed(2),
+expense(r).toFixed(2),
+net(r).toFixed(2)
+]);
+
+});
+
+let csv=rows.map(row=>
+row.map(v=>{
+let s=String(v);
+return /[,"\n]/.test(s)
+?'"'+s.replace(/"/g,'""')+'"'
+:s;
+}).join(",")
+).join("\n");
+
+let blob=new Blob(
+["\ufeff"+csv],
+{type:"text/csv;charset=utf-8"}
+);
+
+let url=URL.createObjectURL(blob);
+let a=document.createElement("a");
+
+a.href=url;
+a.download=
+"grab-driver-net-"+today()+".csv";
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+}
+
+function importBackup(event){
+
+let file=event.target.files[0];
+if(!file)return;
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+try{
+
+let data=JSON.parse(reader.result);
+
+if(!Array.isArray(data.records)){
+throw new Error();
+}
+
+let ids=new Set(records.map(r=>r.id));
+let added=0;
+
+data.records.forEach(r=>{
+
+if(!r.id){
+r.id=
+Date.now().toString(36)+
+Math.random().toString(36).slice(2);
+}
+
+if(!ids.has(r.id)){
+
+records.push(r);
+ids.add(r.id);
+added++;
+
+}
+
+});
+
+localStorage.setItem(KEY,JSON.stringify(records));
+
+renderAll();
+
+alert(
+"恢复完成！\n"+
+"新增 "+added+" 条记录。\n"+
+"目前共有 "+records.length+" 条记录。"
+);
+
+}catch(e){
+
+alert("备份文件无效");
+
+}
+
+};
+
+reader.readAsText(file);
+
+event.target.value="";
+
+}
+
+function clearAll(){
+
+if(!records.length){
+alert("目前没有记录");
+return;
+}
+
+if(!confirm(
+"确定要清除全部记录吗？\n\n建议先备份。"
+))return;
+
+if(!confirm(
+"最后确认：全部 "+
+records.length+
+" 条记录将被删除。"
+))return;
+
+localStorage.removeItem(KEY);
+records=[];
+
+renderAll();
+
+alert("全部记录已清除");
+
+}
+
+function renderAll(){
+
+renderDashboard();
+renderRecords();
+renderTools();
+
+}
+
+$("dailyTarget").addEventListener(
+"input",updateTargets
+);
+
+$("monthlyTarget").addEventListener(
+"input",updateTargets
+);
+
+resetForm();
+renderAll();
+
+</script>
+
+</body>
+</html>

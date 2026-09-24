@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="./manifest.json">
+<title>Grab Driver Net 3.0</title>
+</head>
+
+<body>
+
+<h2>Grab Driver Net 3.0</h2>
+
+<p>离线功能正在启用……</p>
+
+<p>
+<a href="./index32.html">进入完整版本</a>
+</p>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw-v3.js")
+      .then(() => {
+        console.log("Offline mode ready");
+      })
+      .catch(err => {
+        console.log("Service Worker error:", err);
+      });
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 3.5</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#111827;font-family:Arial,sans-serif}
+header{background:#111827;color:white;padding:20px}
+header h2{margin:0 0 6px}
+header p{margin:0;color:#cbd5e1;font-size:13px}
+nav{display:grid;grid-template-columns:repeat(5,1fr);background:white;position:sticky;top:0;z-index:2;box-shadow:0 2px 6px #0001}
+nav button{border:0;background:white;padding:13px 2px;font-size:12px;color:#475569}
+nav button.active{color:#0f766e;border-bottom:3px solid #0f766e;font-weight:bold}
+main{max-width:650px;margin:auto;padding:14px}
+.page{display:none}
+.page.active{display:block}
+.card{background:white;border-radius:14px;padding:16px;margin-bottom:13px}
+h3{font-size:16px;margin:0 0 14px}
+label{display:block;font-size:13px;color:#64748b;margin:12px 0 6px}
+input,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;font-size:15px}
+button.action{border:0;border-radius:9px;background:#111827;color:white;padding:11px 14px;font-size:14px}
+button.secondary{background:#e2e8f0;color:#111827}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:13px;min-width:0}
+.metric span{display:block;color:#64748b;font-size:12px}
+.metric b{display:block;font-size:19px;margin-top:7px;overflow-wrap:anywhere}
+.green{color:#047857}
+.small{font-size:12px;color:#64748b;line-height:1.5}
+.barrow{margin:14px 0}
+.barlabel{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:6px}
+.barbg{height:11px;background:#e2e8f0;border-radius:20px;overflow:hidden}
+.bar{height:100%;background:#0f766e;border-radius:20px}
+.monthrow{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px}
+.monthrow:last-child{border:0}
+.monthselect{margin-bottom:14px}
+.notice{padding:12px;background:#f8fafc;border-radius:9px;color:#64748b;font-size:12px;line-height:1.5}
+.empty{text-align:center;padding:25px;color:#64748b}
+a{color:#0f766e}
+</style>
+</head>
+<body>
+<header>
+<h2>Grab Driver Net 3.5</h2>
+<p>司机净收入与工作时间记录</p>
+</header>
+
+<nav>
+<button class="active" onclick="go('home',this)">首页</button>
+<button onclick="go('records',this)">记录</button>
+<button onclick="go('settings',this)">设置</button>
+<button onclick="go('data',this)">数据</button>
+<button onclick="go('monthly',this)">月总结</button>
+</nav>
+
+<main>
+<section id="home" class="page active">
+<div class="card">
+<h3>今日收入</h3>
+<div class="grid">
+<div class="metric"><span>Gross 总收入</span><b id="todayGross">RM 0.00</b></div>
+<div class="metric"><span>Expenses 总开销</span><b id="todayExpense">RM 0.00</b></div>
+<div class="metric"><span>Net 净收入</span><b class="green" id="todayNet">RM 0.00</b></div>
+<div class="metric"><span>工作小时</span><b id="todayHours">0.0 h</b></div>
+</div>
+</div>
+<div class="card">
+<h3>今日目标</h3>
+<div id="todayTarget">RM 0 / RM 300</div>
+</div>
+<div class="card">
+<h3>本月净收入</h3>
+<div class="metric"><span>Monthly Net</span><b class="green" id="currentMonthNet">RM 0.00</b></div>
+</div>
+<div class="card">
+<button class="action" onclick="go('records',document.querySelectorAll('nav button')[1])">查看记录</button>
+</div>
+</section>
+
+<section id="records" class="page">
+<div class="card">
+<h3>收入记录</h3>
+<label>日期</label><input type="date" id="rDate">
+<label>收入 Income (RM)</label><input type="number" id="rIncome" step="0.01">
+<label>Bonus / Incentive (RM)</label><input type="number" id="rBonus" step="0.01">
+<label>Petrol (RM)</label><input type="number" id="rPetrol" step="0.01">
+<label>Toll (RM)</label><input type="number" id="rToll" step="0.01">
+<label>Parking (RM)</label><input type="number" id="rParking" step="0.01">
+<label>Repair (RM)</label><input type="number" id="rRepair" step="0.01">
+<label>Other expenses (RM)</label><input type="number" id="rOther" step="0.01">
+<label>开始时间</label><input type="time" id="rStart">
+<label>结束时间</label><input type="time" id="rEnd">
+<label>行驶公里 KM</label><input type="number" id="rKm" step="0.1">
+<button class="action" onclick="saveRecord()">保存记录</button>
+<button class="action secondary" onclick="clearForm()">清空</button>
+<p class="small" id="editStatus"></p>
+</div>
+<div class="card">
+<h3>历史记录</h3>
+<div id="recordList"></div>
+</div>
+</section>
+
+<section id="settings" class="page">
+<div class="card">
+<h3>收入目标设置</h3>
+<label>每日净收入目标 (RM)</label>
+<input type="number" id="dailyGoal">
+<label>每月净收入目标 (RM)</label>
+<input type="number" id="monthlyGoal">
+<button class="action" onclick="saveSettings()">保存目标</button>
+</div>
+</section>
+
+<section id="data" class="page">
+<div class="card">
+<h3>数据备份与还原</h3>
+<button class="action" onclick="exportBackup()">下载完整备份 JSON</button>
+<label>导入备份 JSON</label>
+<input type="file" id="importFile" accept=".json,application/json">
+<button class="action" onclick="importBackup()">导入备份</button>
+<p class="small">导入会合并记录，不会删除现有记录。</p>
+<button class="action secondary" onclick="exportCSV()">导出 CSV</button>
+</div>
+</section>
+
+<section id="monthly" class="page">
+<div class="card">
+<h3>月收入总结 Monthly Summary</h3>
+<label>选择月份</label>
+<select id="monthSelect" class="monthselect" onchange="renderMonth()"></select>
+<div class="grid" id="monthMetrics"></div>
+</div>
+<div class="card">
+<h3>各月份净收入比较</h3>
+<div id="monthChart"></div>
+</div>
+<div class="card">
+<h3>所有月份净收入</h3>
+<div id="monthList"></div>
+</div>
+<div class="card">
+<button class="action" onclick="exportMonthly()">导出所选月份 CSV</button>
+<p class="small">月份总结使用本 App 储存的记录，新增或修改记录后会自动更新。</p>
+</div>
+</section>
+</main>
+
+<script>
+const KEY="grab_driver_net_2_records";
+const TARGET_KEY="grab_driver_net_targets";
+let records=[];
+let editId=null;
+
+function $(id){return document.getElementById(id)}
+function num(v){let n=Number(v);return Number.isFinite(n)?n:0}
+function money(v){return num(v).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function today(){return new Date().toLocaleDateString("en-CA")}
+function readData(){
+ try{
+  let v=JSON.parse(localStorage.getItem(KEY)||"[]");
+  records=Array.isArray(v)?v:[];
+ }catch(e){records=[]}
+}
+function saveData(){localStorage.setItem(KEY,JSON.stringify(records))}
+function gross(r){return num(r.income)+num(r.bonus)}
+function expense(r){return num(r.petrol)+num(r.toll)+num(r.parking)+num(r.repair)+num(r.other)}
+function net(r){return gross(r)-expense(r)}
+function hours(r){
+ if(r.hours!==undefined && r.hours!==null && r.hours!=="")return num(r.hours);
+ if(!r.startTime||!r.endTime)return 0;
+ let a=r.startTime.split(":").map(Number);
+ let b=r.endTime.split(":").map(Number);
+ let start=a[0]*60+a[1],end=b[0]*60+b[1];
+ if(end<start)end+=1440;
+ return (end-start)/60;
+}
+function km(r){return num(r.km)}
+function go(id,btn){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ $(id).classList.add("active");
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ if(id==="monthly")renderMonthly();
+ if(id==="home")renderHome();
+ if(id==="records")renderRecords();
+}
+function renderHome(){
+ const d=records.filter(r=>r.date===today());
+ const g=d.reduce((s,r)=>s+gross(r),0);
+ const e=d.reduce((s,r)=>s+expense(r),0);
+ const n=g-e;
+ const h=d.reduce((s,r)=>s+hours(r),0);
+ $("todayGross").textContent="RM "+money(g);
+ $("todayExpense").textContent="RM "+money(e);
+ $("todayNet").textContent="RM "+money(n);
+ $("todayHours").textContent=h.toFixed(1)+" h";
+ const month=records.filter(r=>(r.date||"").slice(0,7)===today().slice(0,7));
+ const mn=month.reduce((s,r)=>s+net(r),0);
+ $("currentMonthNet").textContent="RM "+money(mn);
+ const goal=num(loadSettings().daily)||300;
+ $("todayTarget").textContent="RM "+money(n)+" / RM "+money(goal);
+}
+function formValues(){
+ return {
+  date:$("rDate").value,
+  income:num($("rIncome").value),
+  bonus:num($("rBonus").value),
+  petrol:num($("rPetrol").value),
+  toll:num($("rToll").value),
+  parking:num($("rParking").value),
+  repair:num($("rRepair").value),
+  other:num($("rOther").value),
+  startTime:$("rStart").value,
+  endTime:$("rEnd").value,
+  km:num($("rKm").value)
+ };
+}
+function saveRecord(){
+ const v=formValues();
+ if(!v.date){alert("请选择日期");return}
+ if(editId!==null){
+  const i=records.findIndex(r=>String(r.id)===String(editId));
+  if(i>=0)records[i]={...records[i],...v};
+ }else{
+  v.id=String(Date.now());
+  records.push(v);
+ }
+ saveData();clearForm();renderAll();
+ alert("记录已保存");
+}
+function clearForm(){
+ editId=null;
+ ["rDate","rIncome","rBonus","rPetrol","rToll","rParking","rRepair","rOther","rStart","rEnd","rKm"].forEach(id=>$(id).value="");
+ $("editStatus").textContent="";
+}
+function editRecord(id){
+ const r=records.find(x=>String(x.id)===String(id));
+ if(!r)return;
+ editId=id;
+ const map={rDate:"date",rIncome:"income",rBonus:"bonus",rPetrol:"petrol",rToll:"toll",rParking:"parking",rRepair:"repair",rOther:"other",rStart:"startTime",rEnd:"endTime",rKm:"km"};
+ Object.keys(map).forEach(k=>$(k).value=r[map[k]]??"");
+ $("editStatus").textContent="正在编辑 "+r.date;
+ go("records",document.querySelectorAll("nav button")[1]);
+}
+function deleteRecord(id){
+ if(!confirm("确定删除这条记录？"))return;
+ records=records.filter(r=>String(r.id)!==String(id));
+ saveData();renderAll();
+}
+function renderRecords(){
+ $("recordList").innerHTML=records.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(r=>
+ `<div class="monthrow"><div><b>${r.date||""}</b><br><span class="small">净收入 RM ${money(net(r))}</span></div><div><button class="action secondary" onclick="editRecord('${r.id}')">编辑</button> <button class="action secondary" onclick="deleteRecord('${r.id}')">删除</button></div></div>`
+ ).join("")||'<div class="empty">暂无记录</div>';
+}
+function loadSettings(){
+ try{return JSON.parse(localStorage.getItem(TARGET_KEY)||'{"daily":300,"monthly":7000}')}
+ catch(e){return {daily:300,monthly:7000}}
+}
+function saveSettings(){
+ const s={daily:num($("dailyGoal").value),monthly:num($("monthlyGoal").value)};
+ localStorage.setItem(TARGET_KEY,JSON.stringify(s));
+ alert("目标已保存");renderHome();
+}
+function initSettings(){
+ const s=loadSettings();
+ $("dailyGoal").value=s.daily||300;
+ $("monthlyGoal").value=s.monthly||7000;
+}
+function exportBackup(){
+ const blob=new Blob([JSON.stringify(records,null,2)],{type:"application/json"});
+ downloadBlob(blob,"grab-driver-net-backup.json");
+}
+function importBackup(){
+ const f=$("importFile").files[0];
+ if(!f){alert("请先选择 JSON 文件");return}
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const arr=JSON.parse(reader.result);
+   if(!Array.isArray(arr))throw Error();
+   const ids=new Set(records.map(r=>String(r.id)));
+   arr.forEach(r=>{
+    if(!r.id)r.id=String(Date.now()+Math.random());
+    if(!ids.has(String(r.id))){records.push(r);ids.add(String(r.id))}
+   });
+   saveData();renderAll();alert("导入完成");
+  }catch(e){alert("文件格式不正确")}
+ };
+ reader.readAsText(f);
+}
+function exportCSV(){
+ const rows=[["Date","Income","Bonus","Expenses","Net","Hours","KM"]];
+ records.forEach(r=>rows.push([r.date,r.income,r.bonus,expense(r),net(r),hours(r),km(r)]));
+ downloadBlob(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv;charset=utf-8"}),"grab-driver-net.csv");
+}
+function downloadBlob(blob,name){
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);a.download=name;a.click();
+ URL.revokeObjectURL(a.href);
+}
+function monthGroups(){
+ const obj={};
+ records.forEach(r=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date||""))return;
+  const key=r.date.slice(0,7);
+  if(!obj[key])obj[key]={month:key,gross:0,expense:0,net:0,hours:0,km:0,days:new Set(),count:0};
+  const m=obj[key];
+  m.gross+=gross(r);m.expense+=expense(r);m.net+=net(r);
+  m.hours+=hours(r);m.km+=km(r);m.days.add(r.date);m.count++;
+ });
+ return Object.values(obj).sort((a,b)=>b.month.localeCompare(a.month));
+}
+function monthLabel(s){
+ const p=s.split("-");
+ return new Date(Number(p[0]),Number(p[1])-1,1).toLocaleDateString("en-MY",{month:"long",year:"numeric"});
+}
+function renderMonthly(){
+ const groups=monthGroups();
+ const select=$("monthSelect");
+ const previous=select.value;
+ if(!groups.length){
+  select.innerHTML='<option value="">暂无记录</option>';
+  $("monthMetrics").innerHTML='<div class="empty">暂无记录</div>';
+  $("monthChart").innerHTML="";$("monthList").innerHTML="";
+  return;
+ }
+ select.innerHTML=groups.map(m=>`<option value="${m.month}">${monthLabel(m.month)}</option>`).join("");
+ select.value=groups.some(m=>m.month===previous)?previous:groups[0].month;
+ renderMonth();renderComparison(groups);
+}
+function renderMonth(){
+ const m=monthGroups().find(x=>x.month===$("monthSelect").value);
+ if(!m)return;
+ const stats=[
+ ["Gross 总收入","RM "+money(m.gross)],
+ ["Expenses 总开销","RM "+money(m.expense)],
+ ["Net 净收入","RM "+money(m.net)],
+ ["工作天数",m.days.size+" days"],
+ ["工作小时",m.hours.toFixed(1)+" h"],
+ ["平均每小时净收入","RM "+money(m.hours?m.net/m.hours:0)],
+ ["总行驶公里",m.km.toFixed(1)+" km"],
+ ["记录数量",m.count+" 条"]
+ ];
+ $("monthMetrics").innerHTML=stats.map((s,i)=>
+ `<div class="metric"><span>${s[0]}</span><b class="${i===2?'green':''}">${s[1]}</b></div>`
+ ).join("");
+}
+function renderComparison(groups){
+ const max=Math.max(1,...groups.map(m=>Math.max(0,m.net)));
+ $("monthChart").innerHTML=groups.map(m=>
+ `<div class="barrow"><div class="barlabel"><span>${monthLabel(m.month)}</span><b>RM ${money(m.net)}</b></div><div class="barbg"><div class="bar" style="width:${Math.max(0,m.net)/max*100}%"></div></div></div>`
+ ).join("");
+ $("monthList").innerHTML=groups.map(m=>
+ `<div class="monthrow"><b>${monthLabel(m.month)}</b><b class="green">RM ${money(m.net)}</b></div>`
+ ).join("");
+}
+function exportMonthly(){
+ const m=monthGroups().find(x=>x.month===$("monthSelect").value);
+ if(!m)return;
+ const rows=[["Month","Gross","Expenses","Net","Days","Hours","Net per Hour","KM"]];
+ rows.push([m.month,m.gross,m.expense,m.net,m.days.size,m.hours,m.hours?m.net/m.hours:0,m.km]);
+ downloadBlob(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv;charset=utf-8"}),"monthly-summary-"+m.month+".csv");
+}
+function renderAll(){renderHome();renderRecords();renderMonthly()}
+readData();
+$("rDate").value=today();
+initSettings();
+renderAll();
+</script>
+</body>
+</html>

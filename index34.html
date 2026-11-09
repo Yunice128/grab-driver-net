@@ -1,0 +1,302 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grab Driver Net 3.4</title>
+<style>
+body{margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#111827}
+.loading{padding:35px 20px;text-align:center}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">正在载入 Grab Driver Net 3.4……</div>
+
+<script>
+(async function(){
+  try{
+    const response=await fetch("./index32.html");
+    if(!response.ok) throw new Error("无法读取 index32.html");
+    let html=await response.text();
+
+    /* 更新版本名称 */
+    html=html.replace(
+      "Grab Driver Net 3.0",
+      "Grab Driver Net 3.4"
+    );
+
+    /* 五个导航按钮 */
+    html=html.replace(
+      "grid-template-columns:repeat(4,1fr);",
+      "grid-template-columns:repeat(5,1fr);"
+    );
+
+    const oldNav='<button onclick="showPage(\'tools\',this)">💾 数据</button>';
+    const newNav=oldNav+
+      '<button onclick="showPage(\'monthly\',this)">📈 月总结</button>';
+
+    if(!html.includes(oldNav)) throw new Error("找不到原本导航栏");
+    html=html.replace(oldNav,newNav);
+
+    /* 月收入总结页面样式 */
+    const monthlyCSS=`
+    .monthGrid{
+      display:grid;grid-template-columns:1fr 1fr;gap:10px
+    }
+    .monthStat{
+      background:#f8fafc;padding:13px;border-radius:13px
+    }
+    .monthStat span{
+      display:block;font-size:12px;color:#64748b
+    }
+    .monthStat b{
+      display:block;font-size:18px;margin-top:6px;
+      overflow-wrap:anywhere
+    }
+    .monthSelect{
+      width:100%;padding:12px;border:1px solid #dbe2ea;
+      border-radius:11px;background:white;font-size:16px
+    }
+    .monthBarRow{margin:14px 0}
+    .monthBarLabel{
+      display:flex;justify-content:space-between;
+      gap:8px;font-size:13px;margin-bottom:6px
+    }
+    .monthBarBg{
+      height:11px;background:#e2e8f0;
+      border-radius:20px;overflow:hidden
+    }
+    .monthBar{
+      height:100%;background:#0f766e;border-radius:20px
+    }
+    .monthListRow{
+      display:flex;justify-content:space-between;
+      gap:8px;padding:12px 0;
+      border-bottom:1px solid #e5e7eb;font-size:14px
+    }
+    .monthNet{font-weight:bold;color:#059669}
+    `;
+
+    html=html.replace("</style>",monthlyCSS+"</style>");
+
+    /* 插入第五个页面 */
+    const monthlySection=`
+    <section id="monthly" class="page">
+
+      <div class="card">
+        <h3>📈 Monthly Summary 月收入总结</h3>
+        <div class="field">
+          <label>选择月份 / Select Month</label>
+          <select id="monthSelect" class="monthSelect"
+            onchange="renderMonthlySummary()"></select>
+        </div>
+      </div>
+
+      <div id="monthlyDetails"></div>
+
+      <div class="card">
+        <h3>📊 各月份净收入比较</h3>
+        <div id="monthlyChart"></div>
+      </div>
+
+      <div class="card">
+        <h3>📅 所有月份收入</h3>
+        <div id="monthlyList"></div>
+      </div>
+
+      <div class="card">
+        <div class="notice">
+          月总结直接读取现有记录。新增、编辑或删除记录后，
+          再打开此页面即可看到更新后的数字。
+        </div>
+      </div>
+
+    </section>
+    `;
+
+    const sectionMarker='</section>\\n\\n</div>\\n\\n<script>\\n\\nconst KEY=';
+    if(!html.includes(sectionMarker))
+      throw new Error("找不到主页面插入位置");
+
+    html=html.replace(
+      sectionMarker,
+      '</section>\\n'+monthlySection+
+      '\\n</div>\\n\\n<script>\\n\\nconst KEY='
+    );
+
+    /* 月收入计算功能 */
+    const monthlyFunctions=`
+function getMonthlyGroups(){
+  const groups={};
+
+  records.forEach(r=>{
+    if(!r.date || !/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(r.date))return;
+
+    const month=r.date.slice(0,7);
+
+    if(!groups[month]){
+      groups[month]={
+        month:month,
+        gross:0,
+        expense:0,
+        net:0,
+        hours:0,
+        km:0,
+        days:new Set(),
+        count:0
+      };
+    }
+
+    const m=groups[month];
+
+    m.gross+=gross(r);
+    m.expense+=expense(r);
+    m.net+=net(r);
+    m.hours+=hours(r);
+    m.km+=Number(r.km||0);
+    m.days.add(r.date);
+    m.count++;
+  });
+
+  return Object.values(groups)
+    .sort((a,b)=>b.month.localeCompare(a.month));
+}
+
+function monthlyLabel(month){
+  const p=month.split("-");
+  const names=[
+    "January","February","March","April",
+    "May","June","July","August",
+    "September","October","November","December"
+  ];
+  return names[Number(p[1])-1]+" "+p[0];
+}
+
+function renderMonthly(){
+  const groups=getMonthlyGroups();
+  const select=$("monthSelect");
+
+  if(!groups.length){
+    select.innerHTML='<option value="">暂无记录</option>';
+    $("monthlyDetails").innerHTML=
+      '<div class="card small">目前没有收入记录。</div>';
+    $("monthlyChart").innerHTML="";
+    $("monthlyList").innerHTML="";
+    return;
+  }
+
+  const previous=select.value;
+
+  select.innerHTML=groups.map(m=>
+    '<option value="'+m.month+'">'+monthlyLabel(m.month)+'</option>'
+  ).join("");
+
+  if(groups.some(m=>m.month===previous)){
+    select.value=previous;
+  }else{
+    select.value=groups[0].month;
+  }
+
+  renderMonthlySummary();
+  renderMonthlyComparison(groups);
+}
+
+function renderMonthlySummary(){
+  const groups=getMonthlyGroups();
+  const month=$("monthSelect").value;
+  const m=groups.find(x=>x.month===month);
+
+  if(!m){
+    $("monthlyDetails").innerHTML=
+      '<div class="card small">这个月份没有记录。</div>';
+    return;
+  }
+
+  const rate=m.hours?m.net/m.hours:0;
+  const kmRate=m.km?m.net/m.km:0;
+
+  $("monthlyDetails").innerHTML=
+    '<div class="card">'+
+      '<h3>📅 '+monthlyLabel(m.month)+' Summary</h3>'+
+      '<div class="monthGrid">'+
+        '<div class="monthStat"><span>Gross 总收入</span><b>RM '+money(m.gross)+'</b></div>'+
+        '<div class="monthStat"><span>Expenses 总开销</span><b>RM '+money(m.expense)+'</b></div>'+
+        '<div class="monthStat"><span>Net 净收入</span><b class="net">RM '+money(m.net)+'</b></div>'+
+        '<div class="monthStat"><span>工作天数</span><b>'+m.days.size+'</b></div>'+
+        '<div class="monthStat"><span>工作小时</span><b>'+m.hours.toFixed(1)+' h</b></div>'+
+        '<div class="monthStat"><span>平均每小时净收入</span><b>RM '+money(rate)+'</b></div>'+
+        '<div class="monthStat"><span>总行驶公里</span><b>'+m.km.toFixed(1)+' km</b></div>'+
+        '<div class="monthStat"><span>平均每公里净收入</span><b>RM '+money(kmRate)+'</b></div>'+
+      '</div>'+
+      '<p class="small">记录数量：'+m.count+' 条</p>'+
+    '</div>';
+}
+
+function renderMonthlyComparison(groups){
+  if(!groups.length)return;
+
+  const max=Math.max(
+    1,...groups.map(m=>Math.max(m.net,0))
+  );
+
+  $("monthlyChart").innerHTML=groups.map(m=>{
+    const width=Math.max(0,m.net)/max*100;
+    return '<div class="monthBarRow">'+
+      '<div class="monthBarLabel">'+
+        '<span>'+monthlyLabel(m.month)+'</span>'+
+        '<b>RM '+money(m.net)+'</b>'+
+      '</div>'+
+      '<div class="monthBarBg">'+
+        '<div class="monthBar" style="width:'+width+'%"></div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+
+  $("monthlyList").innerHTML=groups.map(m=>
+    '<div class="monthListRow">'+
+      '<b>'+monthlyLabel(m.month)+'</b>'+
+      '<span class="monthNet">RM '+money(m.net)+'</span>'+
+    '</div>'
+  ).join("");
+}
+`;
+
+    /* 把月总结计算功能加入原本 JavaScript */
+    const functionMarker="function resetForm(){";
+    if(!html.includes(functionMarker))
+      throw new Error("找不到原本程序位置");
+
+    html=html.replace(
+      functionMarker,
+      monthlyFunctions+"\\n"+functionMarker
+    );
+
+    /* 切换到月总结时刷新数据 */
+    const toolsMarker='if(id==="tools")renderTools();';
+    if(!html.includes(toolsMarker))
+      throw new Error("找不到页面切换程序");
+
+    html=html.replace(
+      toolsMarker,
+      toolsMarker+'\\n  if(id==="monthly")renderMonthly();'
+    );
+
+    /* 显示新版页面 */
+    document.open();
+    document.write(html);
+    document.close();
+
+  }catch(error){
+    document.body.innerHTML=
+      '<div style="padding:25px;font-family:Arial">'+
+      '<h3>无法载入新版 App</h3>'+
+      '<p>'+String(error.message)+'</p>'+
+      '<p>请确认 index32.html 仍然存在。</p>'+
+      '</div>';
+  }
+})();
+</script>
+</body>
+</html>
